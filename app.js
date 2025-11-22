@@ -1,98 +1,128 @@
-// Three.js 設定
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+// =============== 3D Scene Setup ===============
+const scene   = new THREE.Scene();
+const camera  = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 15);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// 地球球體
-const geometry = new THREE.SphereGeometry(5, 64, 64); // 更高解析度
-const textureLoader = new THREE.TextureLoader();
-const material = new THREE.MeshPhongMaterial({
-    map: textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg'), // 真實地球紋理 (可替換)
-    specularMap: textureLoader.load('https://threejs.org/examples/textures/water.jpg'), // 添加光澤
-    shininess: 25
-});
-const earth = new THREE.Mesh(geometry, material);
-scene.add(earth);
-
-// 光源
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-pointLight.position.set(10, 10, 10);
-scene.add(pointLight);
-
-// 相機位置
-camera.position.z = 10;
-
-// OrbitControls for better rotation
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.25;
-controls.enableZoom = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 8;
+controls.maxDistance = 30;
 
-// 簡單板塊數據 (示例：使用歐拉旋轉模擬整體地球視角變化；真實應使用個別板塊 Mesh 和 GPlates 旋轉數據)
-const plateData = {
-    0: { rotation: new THREE.Euler(0, 0, 0) }, // 現在
-    50: { rotation: new THREE.Euler(0.1, 0.2, 0.05) }, // 5000萬年前
-    100: { rotation: new THREE.Euler(0.2, 0.4, 0.1) }, // 1億年前
-    150: { rotation: new THREE.Euler(0.3, 0.6, 0.15) }, // 1.5億年前
-    200: { rotation: new THREE.Euler(0.4, 0.8, 0.2) }, // 2億年前 (近 Pangaea)
-    250: { rotation: new THREE.Euler(0.5, 1.0, 0.25) }, // 2.5億年前
-    300: { rotation: new THREE.Euler(0.6, 1.2, 0.3) }, // 3億年前
-    350: { rotation: new THREE.Euler(0.7, 1.4, 0.35) }, // 3.5億年前
-    400: { rotation: new THREE.Euler(0.8, 1.6, 0.4) }, // 4億年前
-    450: { rotation: new THREE.Euler(0.9, 1.8, 0.45) }, // 4.5億年前
-    500: { rotation: new THREE.Euler(1.0, 2.0, 0.5) }, // 5億年前
-    540: { rotation: new THREE.Euler(1.1, 2.2, 0.55) }  // 5.4億年前 (寒武紀)
-    // 注意：這是簡化；真實數據來自 Scotese PaleoAtlas (下載 https://www.earthbyte.org/webdav/ftp/earthbyte/Scotese_PaleoAtlas_v3.zip)，提取 .rot 文件並計算位置
+// =============== Earth + Clouds + Atmosphere ===============
+const earthGroup = new THREE.Group();
+scene.add(earthGroup);
+
+const earthGeo = new THREE.SphereGeometry(5, 128, 128);
+let earthMat  = new THREE.MeshPhongMaterial();
+const earth    = new THREE.Mesh(earthGeo, earthMat);
+earthGroup.add(earth);
+
+const cloudGeo = new THREE.SphereGeometry(5.05, 128, 128);
+const cloudMat = new THREE.MeshPhongMaterial({
+  map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/clouds.png'),
+  transparent: true, opacity: 0.4
+});
+const clouds = new THREE.Mesh(cloudGeo, cloudMat);
+earthGroup.add(clouds);
+
+// simple glowing atmosphere
+const atmGeo = new THREE.SphereGeometry(5.2, 64, 64);
+const atmMat = new THREE.ShaderMaterial({
+  vertexShader: `
+    varying vec3 vNormal;
+    void main(){ vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+  `,
+  fragmentShader: `
+    varying vec3 vNormal;
+    void main(){ float intensity = pow(0.7 - dot(vNormal, vec3(0.0,0.0,1.0)), 4.0);
+      gl_FragColor = vec4(0.3,0.6,1.0,1.0) * intensity; }
+  `,
+  blending: THREE.AdditiveBlending,
+  side: THREE.BackSide,
+  transparent: true
+});
+const atmosphere = new THREE.Mesh(atmGeo, atmMat);
+earthGroup.add(atmosphere);
+
+// =============== Lighting ===============
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(10, 5, 10);
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0x333333));
+
+// =============== Paleomap textures (public domain / fair use) ===============
+// Add new ones anytime — just drop the image in /textures/ and add to this list
+const paleomaps = {
+   0: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/0_present.jpg",
+  66: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/66_cretaceous.jpg",
+ 100: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/100_ma.jpg",
+ 150: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/150_jurassic.jpg",
+ 200: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/200_triassic.jpg",
+ 250: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/250_pangaea.jpg",
+ 340: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/340_devonian.jpg",
+ 540: "https://raw.githubusercontent.com/lai703aaron/TectEarth/main/textures/540_cambrian.jpg"
 };
 
-// 時間軸控制
+// preload present day
+earthMat.map = new THREE.TextureLoader().load(paleomaps[0]);
+earthMat.needsUpdate = true;
+
+// =============== Timeline Control ===============
 const timeline = document.getElementById('timeline');
-const yearDisplay = document.getElementById('yearDisplay');
-timeline.addEventListener('input', (e) => {
-    const ma = parseInt(e.target.value);
-    yearDisplay.textContent = ma === 0 ? '現在' : `${ma} 百萬年前`;
-    updateEarth(ma);
-});
+const yearLabel = document.getElementById('year');
 
-let currentRotation = new THREE.Euler();
-function updateEarth(ma) {
-    // 查找最近的 key
-    let keys = Object.keys(plateData).map(Number).sort((a, b) => a - b);
-    let key = keys.find(k => k >= ma) || keys[keys.length - 1];
-    const targetRotation = plateData[key].rotation;
+let currentAge = 0;
 
-    // 簡單插值動畫 (過渡效果)
-    gsap.to(currentRotation, {
-        x: targetRotation.x,
-        y: targetRotation.y,
-        z: targetRotation.z,
-        duration: 1,
-        onUpdate: () => {
-            earth.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
-        }
-    });
+function getTextureForAge(ageMa) {
+  const ages = Object.keys(paleomaps).map(Number).sort((a,b)=>a-b);
+  for (let i = ages.length-1; i >= 0; i--) {
+    if (ageMa >= ages[i]) return paleomaps[ages[i]];
+  }
+  return paleomaps[0];
 }
 
-// 為了動畫過渡，添加 GSAP (CDN 在 HTML 中添加 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script> 如果需要；否則移除 gsap 並直接設定)
+timeline.addEventListener('input', (e) => {
+  const age = Number(e.target.value);
+  currentAge = age;
+  yearLabel.textContent = age === 0 ? '現在 (0 Ma)' : `${age} 百萬年前`;
 
-// 動畫循環
+  const newUrl = getTextureForAge(age);
+
+  // smooth fade transition
+  const newTex = new THREE.TextureLoader().load(newUrl, () => {
+    gsap.to(earthMat, {
+      opacity: 0,
+      duration: 0.4,
+      onUpdate: () => earthMat.needsUpdate = true,
+      onComplete: () => {
+        earthMat.map = newTex;
+        earthMat.opacity = 1;
+        earthMat.needsUpdate = true;
+        gsap.to(earthMat, {opacity:1, duration:0.6});
+      }
+    });
+  });
+});
+
+// =============== Animation Loop ===============
 function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+  controls.update();
+  clouds.rotation.y += 0.0001;
+  earthGroup.rotation.y += 0.0003;   // slow auto rotation
+  renderer.render(scene, camera);
 }
 animate();
 
-// 調整視窗大小
+// =============== Resize ===============
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
 });
-
-// 初始化
-updateEarth(0);
