@@ -3,27 +3,192 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tectonic Earth - 板塊漂移時空機</title>
-  <link rel="stylesheet" href="style.css">
+  <title>GeoDrift: 3D Earth Evolution Simulator</title>
   
-  <!-- 穩定 CDN（全球超快）-->
+  <!-- Rock-solid CDNs -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #000; font-family: system-ui, sans-serif; color: white; }
+    #container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    .ui {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); padding: 20px 35px; border-radius: 20px;
+      text-align: center; backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+      z-index: 100; max-width: 90%; border: 1px solid rgba(255,107,0,0.3);
+    }
+    h1 {
+      font-size: 2.2em; background: linear-gradient(90deg, #ff8a00, #da1b60);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px;
+    }
+    #timeLabel { font-size: 1.5em; font-weight: bold; color: #00ffcc; margin: 10px 0; }
+    #timeSlider {
+      width: 100%; height: 12px; border-radius: 6px; background: #333; outline: none; margin: 15px 0;
+    }
+    #timeSlider::-webkit-slider-thumb {
+      appearance: none; width: 25px; height: 25px; border-radius: 50%; background: #ff6b00;
+      cursor: pointer; box-shadow: 0 0 15px #ff6b00;
+    }
+    .buttons button {
+      margin: 5px; padding: 10px 20px; background: #ff6b00; border: none; border-radius: 25px;
+      color: white; font-size: 1em; cursor: pointer; transition: all 0.3s;
+    }
+    .buttons button:hover { background: #ff8a00; transform: scale(1.05); }
+    .info { margin-top: 10px; font-size: 0.9em; opacity: 0.85; }
+    #debug { position: absolute; top: 10px; left: 10px; color: lime; font-size: 0.8em; z-index: 101; }
+  </style>
 </head>
 <body>
   <div id="container"></div>
+  <div id="debug">Loading Earth...</div>
 
   <div class="ui">
-    <h1>Tectonic Earth</h1>
+    <h1>GeoDrift</h1>
     <p id="timeLabel">現在 (0 Ma)</p>
-    <input type="range" id="timeSlider" min="-600" max="250" value="0" step="5">
+    <input type="range" id="timeSlider" min="-600" max="250" value="0" step="10">
     <div class="buttons">
       <button id="playBtn">播放動畫</button>
       <button id="resetBtn">回到現在</button>
     </div>
-    <p class="info">從6億年前到未來2.5億年，見證盤古大陸的誕生與消亡！</p>
+    <p class="info">模擬2.5億年板塊漂移，從盤古大陸到未來Amasia。拖動時間軸探索！</p>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    let scene, camera, renderer, earth, controls;
+    let isPlaying = false;
+    let direction = 1;
+    const debugDiv = document.getElementById('debug');
+
+    // Textures from reliable Imgur (fallback to solid colors if fail)
+    const textures = {
+      "-600": { url: "https://i.imgur.com/2f5mK8J.jpg", color: 0x4a4a4a }, // Rodinia
+      "-540": { url: "https://i.imgur.com/8Y3vXpL.jpg", color: 0x5a5a5a },
+      "-450": { url: "https://i.imgur.com/QkR8mP0.jpg", color: 0x6a6a6a },
+      "-335": { url: "https://i.imgur.com/X7pL9sN.jpg", color: 0x7a7a7a },
+      "-250": { url: "https://i.imgur.com/4r9vZkE.jpg", color: 0x8a8a8a },
+      "-200": { url: "https://i.imgur.com/J8sL2pX.jpg", color: 0x9a9a9a }, // Pangea
+      "-150": { url: "https://i.imgur.com/oP7nR5v.jpg", color: 0xa0a0a0 },
+      "-100": { url: "https://i.imgur.com/W2kX9mZ.jpg", color: 0xb0b0b0 },
+      "-50":  { url: "https://i.imgur.com/9tY5vHq.jpg", color: 0xc0c0c0 },
+      "0":    { url: "https://i.imgur.com/0vL8g7P.jpg", color: 0x006994 }, // Modern
+      "50":   { url: "https://i.imgur.com/L5pR9kD.jpg", color: 0xd0d0d0 },
+      "100":  { url: "https://i.imgur.com/H3mX2vN.jpg", color: 0xe0e0e0 },
+      "250":  { url: "https://i.imgur.com/Z9kP7wQ.jpg", color: 0xf0f0f0 }  // Future
+    };
+
+    function init() {
+      try {
+        debugDiv.textContent = 'Creating scene...';
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000011); // Deep space blue
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Perf boost
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        debugDiv.textContent = 'Adding controls...';
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = true;
+
+        // Earth: Start with fallback blue sphere
+        debugDiv.textContent = 'Building Earth...';
+        const geometry = new THREE.SphereGeometry(1.8, 64, 64); // Smoother, smaller for mobile
+        const loader = new THREE.TextureLoader();
+        const initialTex = loader.load(textures["0"].url, undefined, undefined, () => {
+          // Fallback on error
+          console.warn('Texture failed, using color');
+        });
+        const material = new THREE.MeshPhongMaterial({
+          map: initialTex,
+          color: textures["0"].color // Fallback color
+        });
+        earth = new THREE.Mesh(geometry, material);
+        scene.add(earth);
+
+        // Lights
+        const ambient = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 3, 5);
+        scene.add(dirLight);
+
+        debugDiv.textContent = 'Earth Loaded! Check console for more.';
+        console.log('Tectonic Earth initialized successfully! Orbit with mouse.');
+
+        // UI Events
+        document.getElementById('timeSlider').addEventListener('input', e => updateTime(parseInt(e.target.value)));
+        document.getElementById('playBtn').addEventListener('click', () => {
+          isPlaying = !isPlaying;
+          document.getElementById('playBtn').innerText = isPlaying ? '暫停' : '播放動畫';
+        });
+        document.getElementById('resetBtn').addEventListener('click', () => {
+          const slider = document.getElementById('timeSlider');
+          slider.value = 0;
+          updateTime(0);
+          isPlaying = false;
+          document.getElementById('playBtn').innerText = '播放動畫';
+        });
+
+        window.addEventListener('resize', onResize);
+        animate();
+      } catch (error) {
+        debugDiv.textContent = 'Error: ' + error.message;
+        console.error('Init failed:', error);
+      }
+    }
+
+    function updateTime(ma) {
+      const keys = Object.keys(textures).map(Number).sort((a, b) => a - b);
+      const closest = keys.reduce((prev, curr) => Math.abs(curr - ma) < Math.abs(prev - ma) ? curr : prev);
+      const texData = textures[closest];
+
+      new THREE.TextureLoader().load(texData.url, tex => {
+        earth.material.map = tex;
+        earth.material.color.setHex(0xffffff); // Reset color
+        earth.material.needsUpdate = true;
+      }, undefined, () => {
+        // Fallback to color
+        earth.material.map = null;
+        earth.material.color.setHex(texData.color);
+        earth.material.needsUpdate = true;
+      });
+
+      const label = ma < 0 ? `${Math.abs(ma)} 百萬年前` : ma > 0 ? `未來 ${ma} 百萬年` : '現在';
+      document.getElementById('timeLabel').textContent = label;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if (earth) earth.rotation.y += 0.005; // Slow auto-rotate
+
+      if (isPlaying) {
+        const slider = document.getElementById('timeSlider');
+        let val = parseInt(slider.value) + direction * 5;
+        if (val >= 250 || val <= -600) direction *= -1;
+        slider.value = val;
+        updateTime(val);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // Start on load
+    window.addEventListener('load', init);
+  </script>
 </body>
 </html>
