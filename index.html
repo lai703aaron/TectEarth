@@ -3,61 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Earth - Working!</title>
+  <title>Full-Screen Spinning 3D Earth</title>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.js"></script>
   <style>
-    body { margin:0; overflow:hidden; background:#000; }
+    html, body { 
+      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; 
+    }
+    #container { 
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; 
+    }
   </style>
 </head>
 <body>
+  <div id="container"></div>
 
-<script>
-// ---- 3D Earth starts here ----
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000011);
+  <script>
+    // Full-Screen Spinning 3D Earth - Guaranteed Visible
+    const container = document.getElementById('container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000011); // Cosmic blue
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 5);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 5); // Closer for full-screen feel
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio); // Sharp on high-DPI
+    container.appendChild(renderer.domElement);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.minDistance = 1.5; // Closer zoom
+    controls.maxDistance = 10;
 
-const earthGeo = new THREE.SphereGeometry(2, 64, 64);
-const earthMat = new THREE.MeshPhongMaterial({
-  map: new THREE.TextureLoader().load('https://i.imgur.com/0vL8g7P.jpg'), // modern Earth
-  bumpMap: new THREE.TextureLoader().load('https://i.imgur.com/0vL8g7P.jpg'),
-  bumpScale: 0.05
-});
-const earth = new THREE.Mesh(earthGeo, earthMat);
-scene.add(earth);
+    // Earth: Large, detailed sphere with fallback color
+    const earthGeo = new THREE.SphereGeometry(3, 64, 64); // Bigger for full-screen
+    const earthMat = new THREE.MeshPhongMaterial({
+      color: 0x1e90ff, // Bright dodger blue fallback - highly visible
+      shininess: 100 // Super shiny for glow
+    });
+    const earth = new THREE.Mesh(earthGeo, earthMat);
+    scene.add(earth);
 
-// simple lighting
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(5, 3, 5);
-scene.add(sun);
+    // Optional texture load (won't break if fails)
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      'https://i.imgur.com/0vL8g7P.jpg', // Earth texture
+      (texture) => {
+        earthMat.map = texture;
+        earthMat.needsUpdate = true;
+        console.log('Full Earth texture loaded!');
+      },
+      undefined,
+      (error) => {
+        console.log('Using bright color fallback - Earth still visible!');
+        earthMat.color.setHex(0x00bfff); // Deeper blue
+      }
+    );
 
-// auto spin + render loop
-function animate() {
-  requestAnimationFrame(animate);
-  earth.rotation.y += 0.003;
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
+    // Bright lighting for full visibility
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8); // Strong fill light
+    scene.add(ambient);
+    const sun = new THREE.DirectionalLight(0xffffff, 2); // Intense sun
+    sun.position.set(10, 5, 10);
+    scene.add(sun);
 
-// responsive
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
+    // Spin & render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      earth.rotation.y += 0.005; // Smooth spin
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
 
+    // Full-screen resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    console.log('Full-Screen 3D Earth loaded - drag to rotate!');
+  </script>
 </body>
 </html>
