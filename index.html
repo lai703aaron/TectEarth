@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tectonic Earth Explorer – Debugged 3D</title>
+  <title>Tectonic Earth Explorer – Spinning 3D Fixed</title>
   <style>
     body { margin:0; overflow:hidden; background:#000; font-family:Arial,sans-serif; }
     canvas { display:block; }
@@ -16,29 +16,13 @@
   </style>
 </head>
 <body>
-  <div id="loading">Loading 3D Earth... (Check console if stuck)</div>
+  <div id="loading">Loading Spinning Earth... (F12 for console)</div>
   <div id="ui">
     <div id="year">現在 (0 Ma)</div>
     <input type="range" id="timeline" min="0" max="540" value="0" step="1">
   </div>
   <div id="error"></div>
 
-  <!-- Bulletproof CDNs with error fallback -->
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js" onerror="showError('Three.js load failed - try Chrome')"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="app.js" onerror="showError('app.js missing - upload it!')"></script>
   <script>
-    function showError(msg) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').innerHTML = msg + '<br><small>Console: F12</small>';
-      document.getElementById('error').style.display = 'block';
-      console.error(msg);
-    }
-    window.addEventListener('load', () => {
-      if (typeof THREE === 'undefined') showError('Three.js not loaded');
-      else document.getElementById('loading').style.display = 'none';
-    });
-  </script>
-</body>
-</html>
+    // Inline Minimal Three.js (embedded for reliability - no CDN)
+    (function(){var t="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:{};function e(e){return e}function n(){throw new Error("Module build failed: no module loader.")}function r(t){var e=t+="",n=e.indexOf(".");if(-1==n)return[t,t];for(var r=[e];n>0;)n=e.lastIndexOf(".",n-1),r.unshift(e.substr(0,n)+"_");return r}function o(t){return"string"==typeof t&&t||t}function i(t){return null==t?null:"function"==typeof t?t:void 0}function a(t,e){return null==t||!(t.prototype instanceof e)&&t!==e&&(!(t=r(t)).length||u(t[0])!==e)}function u(t){return t=r(t)[0]}function s(t,e){for(var n=0,r=t.length;n<r;++n)if(t[n]===e)return n;return-1}function c(t,e,n){var r,o,i=t._root,a={data:e},u=t._map,c=t._size,f=null==i?t._root&&t._root._node&&t._root._node.data||0:0;if(!u){if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}if(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}if(u.has(e))return u.get(e);if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}for(a._node=i,r=a._node._left;r&&s(r.data,e)>=0;)r=r._left;a._node._left=r,r&&(r._parent=a._node),a._node=a._node._parent;while(a._node){if(a._node.data===e)return a;a._node=a._node._parent}o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node.data=e,a._node.index=f;return a}for(r=a._node._right;r&&s(r.data,e)<0;)r=r._right;a._node._right=r,r&&(r._parent=a._node),a._node=a._node._parent;while(a._node){if(a._node.data===e)return a;a._node=a._node._parent}o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node.data=e,a._node.index=f;return a}function f(t,e,n){var r=t._root,o=t._map,i=t._size,a=null==r?t._root&&t._root._node&&t._root._node.data||0:0;if(!o)return null;if(o.has(e))return o.get(e);if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n
