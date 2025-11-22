@@ -3,26 +3,275 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tectonic Earth Explorer – Spinning 3D Fixed</title>
+  <title>Tectonic Earth Explorer – Simple Spinning 3D</title>
   <style>
-    body { margin:0; overflow:hidden; background:#000; font-family:Arial,sans-serif; }
-    canvas { display:block; }
-    #ui { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:15px 30px; border-radius:20px; z-index:10; text-align:center; display:none; }
-    #timeline { width:100%; height:8px; margin:10px 0; }
-    #year { font-size:1.6em; margin:5px 0; }
-    #error { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; background:red; padding:20px; border-radius:10px; display:none; text-align:center; }
-    #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; }
-    @media (max-width:700px) { #ui { padding:10px 20px; } }
+    body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+    canvas { display: block; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+    #ui { 
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
+      background: rgba(0,0,0,0.8); color: #fff; padding: 15px; border-radius: 15px; 
+      text-align: center; z-index: 10; display: none; 
+    }
+    #timeline { width: 300px; height: 6px; margin: 10px 0; }
+    #year { font-size: 1.4em; margin: 5px 0; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; text-align: center; }
+    #error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; background: red; padding: 20px; border-radius: 10px; display: none; text-align: center; max-width: 80%; }
+    @media (max-width: 600px) { #timeline { width: 250px; } }
   </style>
 </head>
 <body>
-  <div id="loading">Loading Spinning Earth... (F12 for console)</div>
+  <div id="loading">Launching Spinning Earth... (F12 for debug)</div>
   <div id="ui">
     <div id="year">現在 (0 Ma)</div>
-    <input type="range" id="timeline" min="0" max="540" value="0" step="1">
+    <input type="range" id="timeline" min="0" max="540" value="0" step="10">
+    <div>Drag to rotate | Scroll to zoom</div>
   </div>
   <div id="error"></div>
 
   <script>
-    // Inline Minimal Three.js (embedded for reliability - no CDN)
-    (function(){var t="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof window?window:"undefined"!=typeof global?global:{};function e(e){return e}function n(){throw new Error("Module build failed: no module loader.")}function r(t){var e=t+="",n=e.indexOf(".");if(-1==n)return[t,t];for(var r=[e];n>0;)n=e.lastIndexOf(".",n-1),r.unshift(e.substr(0,n)+"_");return r}function o(t){return"string"==typeof t&&t||t}function i(t){return null==t?null:"function"==typeof t?t:void 0}function a(t,e){return null==t||!(t.prototype instanceof e)&&t!==e&&(!(t=r(t)).length||u(t[0])!==e)}function u(t){return t=r(t)[0]}function s(t,e){for(var n=0,r=t.length;n<r;++n)if(t[n]===e)return n;return-1}function c(t,e,n){var r,o,i=t._root,a={data:e},u=t._map,c=t._size,f=null==i?t._root&&t._root._node&&t._root._node.data||0:0;if(!u){if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}if(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}if(u.has(e))return u.get(e);if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n._parent=e,n=n._left;for(n=t._right;n;)n._parent=e,n=n._right;return e}(i),i._left=a._node._left,r._left=a._node._left,a._node._left=r,r._right=a._node._right,a._node._right=r,o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);)i=o,o=i._parent;if(t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node){if(a._node.data){var l=a._node.data.index;delete a._node.data.index,u.set(a._node.data,l)}}else a._node.data={index:f};return a}for(a._node=i,r=a._node._left;r&&s(r.data,e)>=0;)r=r._left;a._node._left=r,r&&(r._parent=a._node),a._node=a._node._parent;while(a._node){if(a._node.data===e)return a;a._node=a._node._parent}o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node.data=e,a._node.index=f;return a}for(r=a._node._right;r&&s(r.data,e)<0;)r=r._right;a._node._right=r,r&&(r._parent=a._node),a._node=a._node._parent;while(a._node){if(a._node.data===e)return a;a._node=a._node._parent}o=i._parent||i,i._parent=a._node,a._node._parent=o,o&&(o._left===i?o._left=a:o._right=a);t._root=a._node,f=t._size++,u=t._map=new Map,u.set(a,f),a.index=f,a._node.data=e,a._node.index=f;return a}function f(t,e,n){var r=t._root,o=t._map,i=t._size,a=null==r?t._root&&t._root._node&&t._root._node.data||0:0;if(!o)return null;if(o.has(e))return o.get(e);if(n){for(r=function(t){for(var e={_left:t._left,_right:t._right,_parent:t._parent,_node:t._node},n=t._left;n;)n
+    console.log('Starting Earth init...');
+
+    // Simple error handler
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      const errEl = document.getElementById('error');
+      errEl.innerHTML = msg + '<br><small>Open F12 Console for details</small>';
+      errEl.style.display = 'block';
+      console.error(msg);
+    }
+
+    // Check WebGL support
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      showError('WebGL not supported - try Chrome/Firefox. No 3D possible.');
+      throw new Error('No WebGL');
+    }
+    console.log('WebGL ready!');
+
+    // Setup full-screen canvas
+    document.body.appendChild(canvas);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const rect = canvas.getBoundingClientRect();
+
+    // Vertex shader (for 3D sphere)
+    const vsSource = `
+      attribute vec4 aPosition;
+      attribute vec3 aNormal;
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+      uniform mat4 uNormalMatrix;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      void main() {
+        gl_Position = uProjectionMatrix * uModelViewMatrix * aPosition;
+        vNormal = mat3(uNormalMatrix) * aNormal;
+        vPosition = vec3(uModelViewMatrix * aPosition);
+      }
+    `;
+
+    // Fragment shader (modern Earth shading: blue-green with time-based color shift)
+    const fsSource = `
+      precision mediump float;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      uniform float uTimeAge; // For paleo changes
+      uniform vec3 uLightDir;
+      void main() {
+        vec3 normal = normalize(vNormal);
+        vec3 lightDir = normalize(uLightDir);
+        float diff = max(dot(normal, lightDir), 0.0);
+        vec3 ambient = vec3(0.2, 0.3, 0.4);
+        vec3 diffuse = vec3(0.4, 0.6, 0.3) * diff; // Modern green-blue
+        vec3 color = ambient + diffuse;
+        // Time shift: More brown/land for past eras
+        float ageFactor = uTimeAge / 540.0;
+        color = mix(color, vec3(0.6, 0.4, 0.2), ageFactor * 0.7); // Brown for ancient
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    // Compile shader helper
+    function loadShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        showError('Shader compile error: ' + gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    // Setup program
+    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      showError('Program link error: ' + gl.getProgramInfoLog(program));
+    }
+    gl.useProgram(program);
+    console.log('Shaders loaded!');
+
+    // Sphere geometry (high-res for 3D look: 32x16 segments)
+    function createSphere(radius, latitudeBands, longitudeBands) {
+      const positions = [];
+      const normals = [];
+      const indices = [];
+      for (let lat = 0; lat <= latitudeBands; lat++) {
+        const theta = lat * Math.PI / latitudeBands;
+        const sinTheta = Math.sin(theta);
+        const cosTheta = Math.cos(theta);
+        for (let long = 0; long <= longitudeBands; long++) {
+          const phi = long * 2 * Math.PI / longitudeBands;
+          const sinPhi = Math.sin(phi);
+          const cosPhi = Math.cos(phi);
+          const x = radius * cosPhi * sinTheta;
+          const y = radius * cosTheta;
+          const z = radius * sinPhi * sinTheta;
+          positions.push(x, y, z);
+          normals.push(x / radius, y / radius, z / radius);
+        }
+      }
+      for (let lat = 0; lat < latitudeBands; lat++) {
+        for (let long = 0; long < longitudeBands; long++) {
+          const first = (lat * (longitudeBands + 1)) + long;
+          const second = first + longitudeBands + 1;
+          indices.push(first, second, first + 1);
+          indices.push(second, second + 1, first + 1);
+        }
+      }
+      return { positions, normals, indices };
+    }
+
+    const sphereData = createSphere(2, 32, 64); // Detailed sphere
+    console.log('Sphere geometry created!');
+
+    // Buffers
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphereData.positions), gl.STATIC_DRAW);
+
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sphereData.normals), gl.STATIC_DRAW);
+
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(sphereData.indices), gl.STATIC_DRAW);
+
+    // Locations
+    const positionLocation = gl.getAttribLocation(program, 'aPosition');
+    const normalLocation = gl.getAttribLocation(program, 'aNormal');
+    const projectionLocation = gl.getUniformLocation(program, 'uProjectionMatrix');
+    const modelViewLocation = gl.getUniformLocation(program, 'uModelViewMatrix');
+    const normalMatrixLocation = gl.getUniformLocation(program, 'uNormalMatrix');
+    const timeAgeLocation = gl.getUniformLocation(program, 'uTimeAge');
+    const lightDirLocation = gl.getUniformLocation(program, 'uLightDir');
+
+    // Matrices (simple projection & modelview)
+    function mat4() { return new Float32Array(16); }
+    function perspective(out, fovy, aspect, near, far) {
+      const f = 1.0 / Math.tan(fovy / 2);
+      out[0] = f / aspect; out[5] = f; out[10] = (far + near) / (near - far); out[11] = -1; out[14] = (2 * far * near) / (near - far);
+      return out;
+    }
+    function lookAt(out, eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ) {
+      // Simplified lookAt - full impl omitted for brevity, use identity + translate
+      out.set([1,0,0,0, 0,1,0,0, 0,0,1,0, -eyeX,-eyeY,-eyeZ,1]);
+      return out;
+    }
+    let modelViewMatrix = mat4(); // Starts as identity
+    let projectionMatrix = perspective(mat4(), Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
+
+    // Rotation vars
+    let rotationY = 0;
+    let rotationX = 0;
+    let zoom = -5;
+    let isDragging = false;
+    let lastMouseX = 0, lastMouseY = 0;
+    let currentAge = 0;
+
+    // Mouse controls
+    canvas.addEventListener('mousedown', (e) => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - lastMouseX;
+        const deltaY = e.clientY - lastMouseY;
+        rotationY += deltaX * 0.01;
+        rotationX += deltaY * 0.01;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+      }
+    });
+    canvas.addEventListener('mouseup', () => { isDragging = false; });
+    canvas.addEventListener('wheel', (e) => { zoom += e.deltaY * 0.01; zoom = Math.max(-10, Math.min(-2, zoom)); });
+
+    // Timeline
+    const timeline = document.getElementById('timeline');
+    const yearEl = document.getElementById('year');
+    timeline.addEventListener('input', (e) => {
+      currentAge = parseInt(e.target.value);
+      yearEl.textContent = currentAge === 0 ? '現在 (0 Ma)' : `${currentAge} 百萬年前`;
+    });
+
+    // Render function
+    function render() {
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.DEPTH_TEST);
+      gl.enableVertexAttribArray(positionLocation);
+      gl.enableVertexAttribArray(normalLocation);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+      gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+      // Update matrices (simple rotation & zoom)
+      modelViewMatrix.set([
+        Math.cos(rotationY) * Math.cos(rotationX), -Math.sin(rotationY), Math.cos(rotationY) * Math.sin(rotationX), 0,
+        Math.sin(rotationY) * Math.cos(rotationX), Math.cos(rotationY), Math.sin(rotationY) * Math.sin(rotationX), 0,
+        -Math.sin(rotationX), 0, Math.cos(rotationX), 0,
+        0, 0, zoom, 1
+      ]);
+
+      gl.uniformMatrix4fv(projectionLocation, false, projectionMatrix);
+      gl.uniformMatrix4fv(modelViewLocation, false, modelViewMatrix);
+      gl.uniformMatrix4fv(normalMatrixLocation, false, modelViewMatrix); // Simplified normal matrix
+      gl.uniform1f(timeAgeLocation, currentAge);
+      gl.uniform3fv(lightDirLocation, [0.5, 0.7, 1.0]);
+
+      gl.drawElements(gl.TRIANGLES, sphereData.indices.length, gl.UNSIGNED_SHORT, 0);
+    }
+
+    // Animation loop - Auto-spin!
+    function animate() {
+      rotationY += 0.005; // Gentle auto-rotation
+      render();
+      requestAnimationFrame(animate);
+    }
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      projectionMatrix = perspective(mat4(), Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
+    });
+
+    // Hide loading, show UI, start spinning
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    animate();
+    console.log('Earth spinning! Check the blue-green globe. F12 for more logs.');
+  </script>
+</body>
+</html>
