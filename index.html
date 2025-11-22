@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tectonic Earth - 板塊漂移時空機</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/three@0.168.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.168.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <div class="ui">
+    <h1>Tectonic Earth</h1>
+    <p id="timeLabel">現在 (0 Ma)</p>
+    
+    <input type="range" id="timeSlider" min="-600" max="250" value="0" step="5"/>
+    
+    <div class="controls">
+      <button id="playBtn">播放動畫</button>
+      <button id="resetBtn">回到現在</button>
+    </div>
+    
+    <div class="info">
+      從 6 億年前到未來 2.5 億年，見證盤古大陸的誕生與消亡！
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
